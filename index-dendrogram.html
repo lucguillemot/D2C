@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>D2C</title>
+	<!-- JQuery -->
+	<script src="src/lib/jquery/dist/jquery.min.js"></script>
+
+	<!-- Bootstrap -->
+	<link href="src/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<script src="src/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+	
+	<!-- d3 and plugins -->
+	<script src="src/lib/d3/build/d3.min.js"></script>
+	<script src="src/lib/topojson/build/topojson.min.js"></script>
+
+	<!-- custom js -->
+	<script src="src/scripts/map.js"></script>
+	<script src="src/scripts/force-graph.js"></script>
+	<script src="src/scripts/color.js"></script>
+
+	<!-- custom css -->
+	<link rel="stylesheet" href="src/css/main.css" />
+
+	<style type="text/css">
+		.node circle {
+		  fill: #999;
+		}
+
+		.node text {
+		  font: 5px sans-serif;
+		}
+
+		.node--internal circle {
+		  fill: #555;
+		}
+
+		.node--internal text {
+			font: 6px sans-serif;
+		 	text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+		}
+
+		.link {
+		  fill: none;
+		  stroke: #555;
+		  stroke-opacity: 0.4;
+		  stroke-width: .5px;
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<div class="container">
+      	<div class="row top-buffer">
+      		<div class="col-xs-6" id="dendrogram"></div>
+      		<div class="col-xs-6"></div>
+      	</div>
+	</div> <!-- end of container -->
+
+
+	<script type="text/javascript">
+
+		var w3 = 262.5,
+			w4 = 360,
+			w5 = 457.5,
+			w6 = 555,
+			w7 = 622,
+			w8 = 750,
+			w9 = 847.5;
+
+		var L = 75;
+
+		var clusterById = {},
+			pca1ById = {},
+			pca2ById = {},
+			pca3ById = {},
+			xById = {},
+			yById = {},
+			currentColor = "",
+			currentCluster = "";
+
+		var mapKeyLabels = ["1. Wealthy educated surburban families", "2. Dense and urban diversity", "3. Struggling, less educated black urban families", "4. Urban diversity", "5. Urban strugging enclaves", "6. Poorly educated lower middle-class families", "7. Educated and wealthy urbanites", "8. Newer middle-class surbanites", "9. Urban asian families in newer buildings", "10. Young and educated college goers", "11. Urban less white middle-class households", "12. Air force base", "13. New urban edges", "14. Asian well off suburban communities", "15. New urban neighborhoods"]
+
+		// Dendrogram
+		var svg = d3.select("#dendrogram").append("svg")
+				  .attr("width", 800)
+				  .attr("height", 300);
+
+		g = svg.append("g");
+//			.attr("transform", "translate(" + (w5 / 2 - 15) + "," + (w5 / 2 + 25) + ")");
+
+		var tree = d3.cluster() // Create a 'layout' (a function)
+  				.size([800, 300]);
+
+		//d3.json("data/children.json", function(data){
+		d3.json("data/dendro-data.json", function(data){
+
+			var d = d3.hierarchy(data); // same data in the 'hierarchy' format
+			console.log(d.descendants());
+
+
+			
+			var root = tree(d); // instantiate the 'layout' with the actual data (an object)
+	   		console.log(root.children);
+
+	   		var link = g.selectAll(".link")
+					      .data(root.descendants().slice(1))
+					    .enter().append("path")
+					      .attr("class", "link")
+					      .attr("d", function(d) {
+					        return "M" + d.x + "," + d.y
+					            + "C" + (d.parent.x) + "," + d.y
+					            + " " + (d.parent.x) + "," + d.parent.y
+					            + " " + d.parent.x + "," + d.parent.y;
+					      });
+
+			var node = g.selectAll(".node")
+			  .data(root.descendants())
+			.enter().append("g")
+			  .attr("class", function(d, i) { return "node"+i + (d.children ? " node--internal" : " node--leaf"); })
+			  .attr("depth", function(d) { return "d"+d.depth; })
+			  .attr("transform", function(d) { 
+			    return "translate(" + d.x + ", " + d.y + ")"; 
+			  })
+
+			node.append("circle")
+			  .attr("r", 1);
+
+			node.append("text")
+				.attr("dy", 3)
+				.attr("x", function(d) { return d.children ? -8 : 8; })
+				.style("text-anchor", function(d) { return d.children ? "end" : "start"; })
+				.text(function(d) { 
+					return d.data.name;
+				});
+
+			//d3.selectAll("")
+
+			/*var link = g.selectAll(".link")
+			    .data(root.descendants().slice(1))
+			    .enter().append("path")
+			      .attr("class", "link")
+			      .attr("d", function(d) {
+			        return "M" + project(d.x, d.y)
+			            + "C" + project(d.x, (d.y + d.parent.y) / 2)
+			            + " " + project(d.parent.x, (d.y + d.parent.y) / 2)
+			            + " " + project(d.parent.x, d.parent.y);
+			        })
+
+			  var node = g.selectAll(".node")
+			    .data(root.descendants())
+			    .enter().append("g")
+			      .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
+			      .attr("transform", function(d) { return "translate(" + project(d.x, d.y) + ")"; });
+
+			  node.append("circle")
+			      .attr("r", 2.5);
+
+			  node.append("text")
+			      .attr("dy", ".31em")
+			      .attr("x", function(d) { return d.x < 180 === !d.children ? 6 : -6; })
+			      .style("text-anchor", function(d) { return d.x < 180 === !d.children ? "start" : "end"; })
+			      .attr("transform", function(d) { return "rotate(" + (d.x < 180 ? d.x - 90 : d.x + 90) + ")"; })
+			      .text(function(d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });*/
+
+
+			});
+
+			function project(x, y) {
+			  var angle = (x - 90) / 180 * Math.PI, radius = y;
+			  return [radius * Math.cos(angle), radius * Math.sin(angle)];
+			}
+
+	</script>
+
+</body>
+</html>

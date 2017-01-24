@@ -1,0 +1,48 @@
+.top-buffer {
+	margin-top:20px;
+}
+
+path.tract {
+  fill: #efefef;
+  fill-opacity: .9;
+  border-radius: 25px;
+  stroke: #000;
+  stroke-width: .1px;
+}
+
+path.tract:hover {
+    fill-opacity: 0.2 !important;
+}
+
+.force-circle {
+  fill: #000;
+  fill-opacity: .1;
+  stroke: #000;
+  stroke-width: .5px;
+  cursor: move;
+}
+
+.links line {
+  stroke: #ddd;
+  stroke-width: .1px;
+}
+
+.force-labels {
+  font-size: 10px;
+  fill: #000;
+  cursor: move;
+  dominant-baseline: central;
+  text-anchor: middle;
+}
+
+svg.force {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 15px;
+}
+
+.map-key-labels {
+  font-size: 9px;
+  dominant-baseline: central;
+}
